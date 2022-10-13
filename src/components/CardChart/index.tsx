@@ -57,7 +57,7 @@ const CardChart: React.FC<IProps> = ({ data,title,loading }) => {
         //     },
         // },
         tooltip: {
-            title: (value: string) => `Data: ${ moment(value)?.format("DD/MM/YYYY HH:mm:ss") }`,
+            title: (value: string) => `Data: ${ value }`,
             formatter: (value: { name: string, value: number }) => ({
                 name: value.name,
                 value: value.value.toFixed(2)
@@ -65,7 +65,7 @@ const CardChart: React.FC<IProps> = ({ data,title,loading }) => {
         },
         xAxis: {
             label: {
-                formatter: (value: string) => `${ moment(value)?.format("DD/MM/YYYY-HH:mm:ss") }`,
+                formatter: (value: string) => `${ value }`,
             },
         },
         yAxis: {
