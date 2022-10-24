@@ -1,13 +1,18 @@
-import React, {useEffect, useState} from 'react'
+import React, {useCallback, useEffect, useMemo, useState} from 'react'
 import {Row} from 'antd'
 import 'flowbite'
 import 'antd/dist/antd.css'
 import './estilo.css'
-import {ISensor} from '../../core/interface'
 import CardChart from '../../components/CardChart'
 import api from '../../core/services/api'
 import Progress from '../../components/Progress'
-import moment from "moment";
+import {IYearView} from "../../core/interface/IYearView";
+import {IMonthView} from "../../core/interface/IMonthView";
+import {IHourView} from "../../core/interface/IHourView";
+import {IHourAndMinuteView} from "../../core/interface/IHourAndMinuteView";
+import {IDayOfWeekView} from "../../core/interface/IDayOfWeekView";
+import {IDayOFMonthView} from "../../core/interface/IDayOFMonthView";
+import {ISensor} from "../../core/interface";
 
 interface IData {
     date: string
@@ -17,69 +22,117 @@ interface IData {
 
 
 const Dashboard: React.FC = () => {
-    const [data, setData] = useState<ISensor[]>([])
+
+    const [yaerData, setYaerData] = useState<IData[]>([])
+    const [monthData, setMonthData] = useState<IData[]>([])
     const [hourData, setHourData] = useState<IData[]>([])
-    const [timeData, setTimeData] = useState<IData[]>([])
-    const [dateHourData, setDateHourData] = useState<IData[]>([])
-    const [dateData, setDateData] = useState<IData[]>([])
+    const [hourAndMinuteData, setHourAndMinuteData] = useState<IData[]>([])
+    const [dayOfWeekData, setDayOfWeekData] = useState<IData[]>([])
+    const [dayOfMonthData, setDayOfMonthData] = useState<IData[]>([])
 
-    const formatData = (data: ISensor[]) => {
-        setHourData([])
-        setTimeData([])
-        setDateHourData([])
-        setDateData([])
+    const [sensorData, setSensorData] = useState<IData[]>([])
 
-        data.forEach((element) => {
-            setHourData((prev) => [
-                ...prev,
-                {
-                    date: moment(element.createdAt).format('HH'),
-                    value: element.litrosMin,
-                    name: 'Por hora',
-                },
-            ])
-            setTimeData((prev) => [
-                ...prev,
-                {
-                    date: moment(element.createdAt).format('HH:mm:ss'),
-                    value: element.litrosMin,
-                    name: 'Por hora e minuto',
-                },
-            ])
-            setDateData((prev) => [
-                ...prev,
-                {
-                    date: moment(element.createdAt).format('DD/MM'),
-                    value: element.litrosMin,
-                    name: 'Por dia',
-                },
-            ])
-            setDateHourData((prev) => [
-                ...prev,
-                {
-                    date: moment(element.createdAt).format('DD/MM HH'),
-                    value: element.litrosMin,
-                    name: 'Por dia e hora',
-                },
-            ])
 
+    const getYearData = (): void => {
+        api.get<IYearView[]>(`sensor/year`).then((response) => {
+            setYaerData(response.data.map((item) => (
+                {
+                    date: item.year.toString(),
+                    value: item.litrosMinAvg,
+                    name: 'Por ano'
+                }
+            )))
         })
     }
 
-    const getData = (): void => {
+    const getMonthData = (): void => {
+        api.get<IMonthView[]>(`sensor/month`).then((response) => {
+            setMonthData(response.data.map((item) => (
+                {
+                    date: item.month.toString(),
+                    value: item.litrosMinAvg,
+                    name: 'Por mês'
+                }
+            )))
+        })
+    }
+
+    const getHourData = (): void => {
+        api.get<IHourView[]>(`sensor/hour`).then((response) => {
+            setHourData(response.data.map((item) => (
+                {
+                    date: item.hour.toString(),
+                    value: item.litrosMinAvg,
+                    name: 'Por hora'
+                }
+            )))
+        })
+    }
+
+    const getHourAndMinuteData = (): void => {
+        api.get<IHourAndMinuteView[]>(`sensor/hourAndMinute`).then((response) => {
+            setHourAndMinuteData(response.data.map((item) => (
+                {
+                    date: item.hour.toString() + ':' + item.minute.toString(),
+                    value: item.litrosMinAvg,
+                    name: 'Por hora e minuto'
+                }
+            )))
+        })
+    }
+
+
+
+    const getDayOfWeekData = (): void => {
+        api.get<IDayOfWeekView[]>(`sensor/dayOfWeek`).then((response) => {
+            setDayOfWeekData(response.data.map((item) => (
+                {
+                    date: item.dayOfWeek.toString(),
+                    value: item.litrosMinAvg,
+                    name: 'Por dia da semana'
+                }
+            )))
+        })
+    }
+
+
+    const getDayOfMonthData = (): void => {
+        api.get<IDayOFMonthView[]>(`sensor/dayOfMonth`).then((response) => {
+            setDayOfMonthData(response.data.map((item) => (
+                {
+                    date: item.dayOfMonth.toString(),
+                    value: item.litrosMinAvg,
+                    name: 'Por dia do mês'
+                }
+            )))
+        })
+    }
+
+    const getSensorData = (): void => {
         api.get<ISensor[]>(`sensor`).then((response) => {
-            setData(response.data)
+            setSensorData(response.data.map((item) => (
+                {
+                    date: item.id.toString(),
+                    value: item.litrosMin,
+                    name: 'Por sensor'
+                }
+            )))
         })
     }
 
+
     useEffect(() => {
-        setInterval(getData, 7000)
+        const interval =  setInterval(() => {
+            getYearData()
+            getMonthData()
+            getHourData()
+            getHourAndMinuteData()
+            getDayOfWeekData()
+            getDayOfMonthData()
+            getSensorData()
+        }, 30000)
+        return () => clearInterval(interval);
     }, [])
-
-    useEffect(() => {
-        formatData(data)
-    }, [data])
-
     return (
         <section className="h-screen w-screen bg-gray-200 flex flex-col-reverse sm:flex-row min-h-0 min-w-0">
             <main className="sm:h-full flex-1 flex flex-col min-h-0 min-w-0 overflow-auto">
@@ -104,8 +157,8 @@ const Dashboard: React.FC = () => {
                                         </div>
                                         <div className="md:w-1/3 w-2/3">
                                             <Progress title="Ultimo fluxo registrado" max={60} min={0}
-                                                      value={hourData[hourData.length - 1]?.value ?? 0}
-                                                      minProgress={20} mediumProgress={30}/>
+                                                      value={sensorData[sensorData.length - 1]?.value ?? 0}
+                                                      minProgress={1} mediumProgress={10}/>
                                         </div>
                                     </div>
                                 </div>
@@ -115,8 +168,17 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <Row justify="space-evenly">
-
-
+                    <div
+                        className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6 bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 rounded-xl overflow-hidden w-full max-w-8 shadow-lg  lg:m-8 ">
+                        <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
+                            <CardChart
+                                data={hourAndMinuteData}
+                                title="Por hora e minuto"
+                                loading={false}
+                                end="23"
+                            />
+                        </h3>
+                    </div>
                 </Row>
 
                 <div className="flex justify-center flex-col md:flex-row flex-col items-stretch w-full ">
@@ -125,7 +187,7 @@ const Dashboard: React.FC = () => {
                         <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
                             <CardChart
                                 data={hourData}
-                                title={'Por hora'}
+                                title="Por hora"
                                 loading={false}
                             />
                         </h3>
@@ -134,36 +196,36 @@ const Dashboard: React.FC = () => {
                         className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6 bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 rounded-xl overflow-hidden w-full max-w-5xl shadow-lg m-4 lg:m-6 ">
                         <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
                             <CardChart
-                                data={timeData}
-                                title={'Por hora e minuto'}
+                                data={monthData}
+                                title="Por mês"
+                                loading={false}
+                            />
+                        </h3>
+                    </div>
+                </div>
+                <div className="flex justify-center flex-col md:flex-row flex-col items-stretch w-full ">
+                    <div
+                        className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6 bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 rounded-xl overflow-hidden w-full max-w-5xl shadow-lg m-4 lg:m-6 ">
+                        <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
+                            <CardChart
+                                data={dayOfWeekData}
+                                title="Por dia da semana"
+                                loading={false}
+                            />
+                        </h3>
+                    </div>
+                    <div
+                        className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6 bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 rounded-xl overflow-hidden w-full max-w-5xl shadow-lg m-4 lg:m-6 ">
+                        <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
+                            <CardChart
+                                data={dayOfMonthData}
+                                title="Por dia do mês"
                                 loading={false}
                             />
                         </h3>
                     </div>
                 </div>
 
-                <div className="flex justify-center flex-col md:flex-row flex-col items-stretch w-full ">
-                    <div
-                        className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6 bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 rounded-xl overflow-hidden w-full max-w-5xl shadow-lg m-4 lg:m-6 ">
-                        <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
-                            <CardChart
-                                data={dateData}
-                                title={'Por dia'}
-                                loading={false}
-                            />
-                        </h3>
-                    </div>
-                    <div
-                        className="flex flex-col px-4 py-6 md:p-6 xl:p-8 w-full bg-gray-50 dark:bg-gray-800 space-y-6 bg-white backdrop-filter backdrop-blur-lg bg-opacity-20 rounded-xl overflow-hidden w-full max-w-5xl shadow-lg m-4 lg:m-6 ">
-                        <h3 className="text-xl dark:text-white font-semibold leading-5 text-gray-800">
-                            <CardChart
-                                data={dateHourData}
-                                title={'Por dia e hora'}
-                                loading={false}
-                            />
-                        </h3>
-                    </div>
-                </div>
 
 
             </main>

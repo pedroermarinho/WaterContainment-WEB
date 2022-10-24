@@ -1,6 +1,4 @@
-import { Line } from "@ant-design/plots";
-import {ISensor} from '../../core/interface/index'
-import moment from 'moment'
+import {Line} from "@ant-design/plots";
 
 interface IData {
     date: string,
@@ -11,6 +9,7 @@ interface IData {
 interface IProps {
     data: IData[],
     title: string,
+    end?: string,
     loading: boolean
 }
 
@@ -18,27 +17,32 @@ interface IConfig {
     data: any,
     xField: string,
     yField: string,
-
+    slider?: any,
     seriesField: string,
     legend: Object,
     smooth?: boolean,
-    // animation: Object,
+    animation?: Object,
     tooltip: Object,
     xAxis: Object,
     yAxis: Object,
 }
 
-const CardChart: React.FC<IProps> = ({ data,title,loading }) => {
+const CardChart: React.FC<IProps> = ({data, title, loading,end}) => {
 
-    const max = () => {
+    const maxValue = () => {
         const valueMax: number = Math.max(...data.map((item) => item.value))
         return (valueMax * 1.01)
     }
 
 
-    const min = () => {
+    const minValue = () => {
         const valueMin: number = Math.min(...data.map((item) => item.value))
-        return  (valueMin - valueMin * 0.01)
+        return (valueMin - valueMin * 0.01)
+    }
+
+    const maxDate = () => {
+        const dateMax: string = end ?? data[data.length - 1]?.date ?? '1'
+        return dateMax
     }
 
     const config: IConfig = {
@@ -57,7 +61,7 @@ const CardChart: React.FC<IProps> = ({ data,title,loading }) => {
         //     },
         // },
         tooltip: {
-            title: (value: string) => `Data: ${ value }`,
+            title: (value: string) => `Data: ${value}`,
             formatter: (value: { name: string, value: number }) => ({
                 name: value.name,
                 value: value.value.toFixed(2)
@@ -65,21 +69,26 @@ const CardChart: React.FC<IProps> = ({ data,title,loading }) => {
         },
         xAxis: {
             label: {
-                formatter: (value: string) => `${ value }`,
+                formatter: (value: string) => `${value}`,
             },
         },
         yAxis: {
-            max: max(),
-            min: min(),
+            max: maxValue(),
+            min: minValue(),
             label: {
-                formatter: (value: any) => `${ Number(value).toFixed(2) }`,
+                formatter: (value: any) => `${Number(value).toFixed(2)}`,
             }
-            }
+        },
+        slider: {
+            start: 0,
+            end: maxDate(),
+
+        },
     };
 
-    return<>
+    return <>
         <h1>{title}</h1>
-        <Line loading={ loading } { ...config } />
+        <Line loading={loading} {...config}/>
     </>
 }
 
